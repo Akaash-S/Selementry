@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Parser Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #2563eb;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    textarea {
+      width: 100%;
+      min-height: 300px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    pre {
+      background-color: #f3f4f6;
+      padding: 15px;
+      border-radius: 4px;
+      overflow: auto;
+      max-height: 500px;
+    }
+    .result-container {
+      margin-top: 30px;
+    }
+    .sample-button {
+      background-color: #10b981;
+      margin-top: 10px;
+    }
+    .sample-button:hover {
+      background-color: #059669;
+    }
+    .error {
+      color: #ef4444;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Resume Parser Test</h1>
+  
+  <div class="form-group">
+    <label for="resumeText">Paste Resume Text:</label>
+    <textarea id="resumeText" placeholder="Paste resume content here"></textarea>
+  </div>
+  
+  <button id="parseButton">Parse Resume</button>
+  <button id="loadSampleButton" class="sample-button">Load Sample Resume</button>
+  
+  <div class="result-container">
+    <h2>Parsed Result:</h2>
+    <div id="loadingIndicator" style="display: none;">Processing...</div>
+    <div id="errorContainer" class="error" style="display: none;"></div>
+    <pre id="resultContainer"></pre>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const parseButton = document.getElementById('parseButton');
+      const loadSampleButton = document.getElementById('loadSampleButton');
+      const resumeTextarea = document.getElementById('resumeText');
+      const resultContainer = document.getElementById('resultContainer');
+      const loadingIndicator = document.getElementById('loadingIndicator');
+      const errorContainer = document.getElementById('errorContainer');
+      
+      // Sample resume for testing
+      const sampleResume = `John Doe
+123 Main Street, New York, NY 10001
+Phone: (555) 123-4567 | Email: john.doe@example.com
+LinkedIn: linkedin.com/in/johndoe | Website: johndoe.com
+
+SUMMARY
+Experienced software engineer with 5+ years of expertise in full-stack development, specializing in React, Node.js, and cloud technologies. Proven track record of delivering robust, scalable applications for enterprise clients. Strong problem-solving skills and passionate about creating intuitive user experiences.
+
+EDUCATION
+Master of Science in Computer Science
+Stanford University, Stanford, CA
+GPA: 3.9/4.0
+September 2015 - June 2017
+
+Bachelor of Science in Software Engineering
+Massachusetts Institute of Technology, Cambridge, MA
+GPA: 3.8/4.0
+September 2011 - June 2015
+
+EXPERIENCE
+Senior Software Engineer
+ABC Tech Solutions, San Francisco, CA
+July 2020 - Present
+• Led a team of 5 developers in building a microservices-based e-commerce platform using Node.js, Express, and MongoDB
+• Implemented CI/CD pipelines using GitHub Actions, reducing deployment time by 40%
+• Designed and developed RESTful APIs serving 1M+ requests daily with 99.9% uptime
+• Optimized database queries, resulting in a 30% improvement in application performance
+
+Software Engineer
+XYZ Software Inc., Seattle, WA
+August 2017 - June 2020
+• Developed responsive web applications using React, Redux, and TypeScript
+• Created automated testing suites with Jest and React Testing Library, achieving 90% code coverage
+• Collaborated with UX designers to implement user-centered interfaces, increasing user satisfaction by 25%
+• Mentored junior developers through code reviews and pair programming sessions
+
+Software Development Intern
+Microsoft, Redmond, WA
+May 2016 - August 2016
+• Contributed to Azure cloud services team, fixing bugs and implementing minor features
+• Developed an internal tool using .NET Core that improved team productivity by 15%
+
+SKILLS
+Technical: JavaScript, TypeScript, React, Redux, Node.js, Express, MongoDB, PostgreSQL, AWS, Docker, Kubernetes, Git
+Soft: Leadership, Communication, Problem-solving, Team collaboration, Time management
+Languages: English (native), Spanish (intermediate), Mandarin (basic)
+Certifications: AWS Certified Developer, Microsoft Certified: Azure Developer Associate
+
+PROJECTS
+E-commerce Platform (2021)
+• Built a scalable e-commerce platform using MERN stack (MongoDB, Express, React, Node.js)
+• Implemented Stripe payment processing and user authentication with JWT
+• GitHub: github.com/johndoe/ecommerce-platform
+
+AI-powered Task Manager (2020)
+• Developed a task management application with NLP capabilities using TensorFlow.js
+• Created a responsive UI with Material-UI components and React hooks
+• Live demo: ai-taskmanager.johndoe.com`;
+      
+      // Handle the parse button click
+      parseButton.addEventListener('click', async function() {
+        const resumeText = resumeTextarea.value.trim();
+        
+        if (!resumeText) {
+          errorContainer.textContent = 'Please enter resume text';
+          errorContainer.style.display = 'block';
+          return;
+        }
+        
+        // Clear previous results and show loading
+        resultContainer.textContent = '';
+        errorContainer.style.display = 'none';
+        loadingIndicator.style.display = 'block';
+        
+        try {
+          // Call the API
+          const response = await fetch('/api/test/resume-parse', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ resumeText })
+          });
+          
+          // Hide loading
+          loadingIndicator.style.display = 'none';
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to parse resume');
+          }
+          
+          // Display the result
+          const result = await response.json();
+          resultContainer.textContent = JSON.stringify(result, null, 2);
+        } catch (error) {
+          errorContainer.textContent = error.message || 'An unexpected error occurred';
+          errorContainer.style.display = 'block';
+          loadingIndicator.style.display = 'none';
+        }
+      });
+      
+      // Handle the load sample button click
+      loadSampleButton.addEventListener('click', function() {
+        resumeTextarea.value = sampleResume;
+      });
+    });
+  </script>
+</body>
+</html>
